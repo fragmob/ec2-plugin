@@ -12,10 +12,12 @@ import hudson.slaves.ComputerLauncher;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import jenkins.model.Jenkins;
+import jenkins.model.JenkinsLocationConfiguration;
 import org.apache.commons.io.IOUtils;
 
 import com.amazonaws.AmazonClientException;
@@ -64,9 +66,11 @@ public class EC2WindowsLauncher extends EC2ComputerLauncher {
 
             logger.println("slave.jar sent remotely. Bootstrapping it");
 
+            logger.println("awww yea: " + computer.getNode().getNodeName().replaceAll(" ","%20"));
             final String jvmopts = computer.getNode().jvmopts;
+            JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
             final WindowsProcess process = connection.execute("java " + (jvmopts != null ? jvmopts : "") + " -jar "
-                    + tmpDir + SLAVE_JAR, 86400);
+                    + tmpDir + SLAVE_JAR + " -jnlpUrl  " + globalConfig.getUrl() + "jenkins/computer/" + computer.getEnvironment() + computer.getNode().getNodeName().replaceAll(" ","%20") + "/slave-agent.jnlp", 86400);
             computer.setChannel(process.getStdout(), process.getStdin(), logger, new Listener() {
                 @Override
                 public void onClosed(Channel channel, IOException cause) {
